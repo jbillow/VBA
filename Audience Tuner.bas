@@ -1,4 +1,3 @@
-Attribute VB_Name = "Module1"
 Option Explicit
 
 Public oKill As String
@@ -24,7 +23,7 @@ Sub OpenFile(MyPath As String, name As String)
     ' for debugging, remove this if statement in deployed version
 '    If Len(MyFile) = 0 Then
 '
-'        MsgBox "No files were found…"
+'        MsgBox "No files were foundâ€¦"
 '
 '        Exit Sub
 '
@@ -78,7 +77,7 @@ Function GetLatestFile(MyPath As String, name As String) As String
     ' for debugging, remove this if statement in deployed version
 '    If Len(MyFile) = 0 Then
 '
-'        MsgBox "No files were found…"
+'        MsgBox "No files were foundâ€¦"
 '
 '        Exit Sub
 '
@@ -444,7 +443,7 @@ Sub PrepareEmail(T As Workbook)
     Application.ScreenUpdating = True
     Application.DisplayAlerts = True
     With ActiveSheet
-        Set pic = .Range("A1:D18")
+        Set pic = .Range("A1:D23")
         pic.CopyPicture xlScreen, xlPicture
     End With
     Application.ScreenUpdating = False
@@ -476,6 +475,48 @@ Sub PrepareEmail(T As Workbook)
     Kill img
     
 End Sub
+
+Sub Archive()
+    
+    'Moves any file that does not contain todays date to the archive folder
+    Dim d As String: d = Format(Now(), "yyyy-mm-dd")
+    Dim strFileName As String
+    Dim strFolder As String: strFolder = ThisWorkbook.Worksheets(1).Range("C4").Value
+    Dim strArchive As String: strArchive = ThisWorkbook.Worksheets(1).Range("C22").Value
+    If Right(strFolder, 1) <> "\" Then strFolder = strFolder & "\"
+    If Right(strArchive, 1) <> "\" Then strArchive = strArchive & "\"
+    Dim strFileSpec As String: strFileSpec = strFolder & "*.*"
+    Dim cont As Boolean
+    
+    strFileName = Dir(strFileSpec)
+    
+    Do While Len(strFileName) > 0
+        cont = Contains(strFileName, d)
+        If cont Then
+            'Do nothing
+        Else
+            Name strFolder & strFileName As strArchive & strFileName 'do nothing
+        End If
+        
+        strFileName = Dir
+    Loop
+    
+End Sub
+
+Function Contains(ByVal string_source As String, ByVal find_text As String, Optional ByVal caseSensitive As Boolean = False) As Boolean
+
+    'Checks if a string contains specified text
+    Dim compareMethod As VbCompareMethod
+
+    If caseSensitive Then
+        compareMethod = vbBinaryCompare
+    Else
+        compareMethod = vbTextCompare
+    End If
+
+    Contains = (InStr(1, string_source, find_text, compareMethod) <> 0)
+
+End Function
 
 Sub Main()
     
@@ -538,9 +579,9 @@ Sub Main()
     Call OpenFile(Path3, Name3)
     Set Settings = ActiveWorkbook
     
-'   'Unzip booked GAM report
-'    MyFile = GetLatestFile(Path4, Name5)
-'    Call Unzip(MyFile, Path5)
+   'Unzip booked GAM report
+    MyFile = GetLatestFile(Path4, Name5)
+    Call Unzip(MyFile, Path5)
     'Open unzipped file
     Call OpenFile(Path5, Name5)
     Set Booked = ActiveWorkbook
@@ -574,5 +615,14 @@ Sub Main()
     
     'Prepeare and send email
     Call PrepareEmail(Tuner)
+    
+    'Archive Files
+    Call Archive
+    
+    Tuner.Close
+    Upload.Close
+    Audience.Close
+    Settings.Close
+    Booked.Close
     
 End Sub
